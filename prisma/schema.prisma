@@ -14,6 +14,43 @@ enum Role {
   DRIVER
 }
 
+enum DriverStatus {
+  ONLINE
+  OFFLINE
+  ON_TRIP
+}
+
+enum RickshawStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum TripStatus {
+  REQUESTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE_BANKING
+}
+
+enum ComplaintStatus {
+  OPEN
+  RESOLVED
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -22,4 +59,141 @@ model User {
   role      Role     @default(DRIVER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  driver Driver?
+  owner  Owner?
+
+  passengerTrips Trip[] @relation("PassengerTrips")
+  driverTrips    Trip[] @relation("DriverTrips")
+
+  payments   Payment[]
+  complaints Complaint[]
+
+  @@index([role])
+  @@index([name])
+  @@index([createdAt])
+}
+
+model Driver {
+  id        String       @id @default(cuid())
+  userId    String       @unique
+  licenseNo String       @unique
+  status    DriverStatus @default(OFFLINE)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rickshaw Rickshaw?
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Owner {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rickshaws Rickshaw[]
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Rickshaw {
+  id      String         @id @default(cuid())
+  plateNo String         @unique
+  model   String?
+  status  RickshawStatus @default(ACTIVE)
+
+  ownerId String
+  owner   Owner  @relation(fields: [ownerId], references: [id])
+
+  driverId String? @unique
+  driver   Driver? @relation(fields: [driverId], references: [id])
+
+  trips Trip[]
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Trip {
+  id String @id @default(cuid())
+
+  passengerId String
+  driverId    String?
+  rickshawId  String?
+
+  pickupLocation  String
+  dropoffLocation String
+
+  fare   Decimal    @db.Decimal(10, 2)
+  status TripStatus @default(REQUESTED)
+
+  passenger User      @relation("PassengerTrips", fields: [passengerId], references: [id])
+  driver    User?     @relation("DriverTrips", fields: [driverId], references: [id])
+  rickshaw  Rickshaw? @relation(fields: [rickshawId], references: [id])
+
+  payment    Payment?
+  complaints Complaint[]
+
+  createdAt DateTime @default(now())
+
+  @@index([passengerId])
+  @@index([driverId])
+  @@index([rickshawId])
+  @@index([status])
+  @@index([pickupLocation])
+  @@index([dropoffLocation])
+  @@index([createdAt])
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  tripId String @unique
+  userId String
+
+  amount Decimal       @db.Decimal(10, 2)
+  method PaymentMethod
+  status PaymentStatus @default(PENDING)
+
+  trip Trip @relation(fields: [tripId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([method])
+  @@index([createdAt])
+}
+
+model Complaint {
+  id String @id @default(cuid())
+
+  userId String
+  tripId String?
+
+  subject     String
+  description String
+  status      ComplaintStatus @default(OPEN)
+
+  user User  @relation(fields: [userId], references: [id])
+  trip Trip? @relation(fields: [tripId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tripId])
+  @@index([status])
+  @@index([subject])
+  @@index([createdAt])
 }
