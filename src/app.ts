@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
-import authRoutes from "./features/auth/auth.routes";
-import driverRoutes from "./features/driver/driver.routes";
+import authRoutes from "./features/auth/auth.routes.js";
+import driverRoutes from "./features/drivers/driver.routes.js";
 
 import adminRouter from "./features/admin/admin.routes.js";
 
@@ -13,9 +13,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/drivers", driverRoutes);
 
 app.get("/", (_req, res) => {
-  res.json({
-    message: "Rickshaw API is running",
-  });
+    res.json({
+        message: "Rickshaw API is running",
+    });
 });
 
 // Admin routes

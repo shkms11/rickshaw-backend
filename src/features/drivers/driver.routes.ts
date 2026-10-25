@@ -1,10 +1,10 @@
 import { Router } from "express";
 import {
-  createDriver,
-  getDrivers,
-  getDriverById,
-  updateDriverStatus,
-} from "./driver.controller";
+    createDriver,
+    getDrivers,
+    getDriverById,
+    updateDriverStatus,
+} from "./driver.controller.js";
 
 const router = Router();
 

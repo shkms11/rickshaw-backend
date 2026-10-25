@@ -1,33 +1,33 @@
 {
-  "compilerOptions": {
-    // Project Structure
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "compilerOptions": {
+        // Project Structure
+        "rootDir": "./src",
+        "outDir": "./dist",
 
-    // Node.js / TypeScript
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2022",
-    "types": ["node"],
+        // Node.js / TypeScript
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "target": "ES2022",
+        "types": ["node"],
 
-    // Output
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
+        // Output
+        "sourceMap": true,
+        "declaration": false,
+        "declarationMap": false,
 
-    // Type Checking
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+        // Type Checking
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
 
-    // Module Settings
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
+        // Module Settings
+        "verbatimModuleSyntax": true,
+        "isolatedModules": true,
+        "moduleDetection": "force",
 
-    // Safety
-    "noUncheckedSideEffectImports": true,
-    "skipLibCheck": true
-  },
-  "include": ["src"]
+        // Safety
+        "noUncheckedSideEffectImports": true,
+        "skipLibCheck": true
+    },
+    "include": ["src"]
 }
