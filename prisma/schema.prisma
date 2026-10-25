@@ -9,9 +9,16 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   OWNER
   DRIVER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum DriverStatus {
@@ -57,6 +64,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(DRIVER)
+  approvalStatus ApprovalStatus @default(PENDING)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

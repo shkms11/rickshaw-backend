@@ -1,0 +1,7 @@
+CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+ALTER TABLE "User"
+ADD COLUMN "approvalStatus" "ApprovalStatus" NOT NULL DEFAULT 'APPROVED';
+
+ALTER TABLE "User"
+ALTER COLUMN "approvalStatus" SET DEFAULT 'PENDING';

@@ -44,6 +44,7 @@ export const register = async (req: Request, res: Response) => {
                 email,
                 password: hashedPassword,
                 role: role ?? "DRIVER",
+                approvalStatus: "PENDING",
             },
         });
 
@@ -54,6 +55,7 @@ export const register = async (req: Request, res: Response) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                approvalStatus: user.approvalStatus,
             },
         });
     } catch (error) {
@@ -101,6 +103,20 @@ export const login = async (req: Request, res: Response) => {
                 .json({ message: "Invalid email or password" });
         }
 
+        if (user.approvalStatus === "PENDING") {
+            return res.status(403).json({
+                code: "ACCOUNT_PENDING_APPROVAL",
+                message: "Your account is awaiting admin approval",
+            });
+        }
+
+        if (user.approvalStatus === "REJECTED") {
+            return res.status(403).json({
+                code: "ACCOUNT_REJECTED",
+                message: "Your account registration was not approved",
+            });
+        }
+
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
             return res
@@ -120,6 +136,7 @@ export const login = async (req: Request, res: Response) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                approvalStatus: user.approvalStatus,
             },
         });
     } catch (error) {
