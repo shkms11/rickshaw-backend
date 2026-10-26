@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./features/auth/auth.routes.js";
 import driverRoutes from "./features/drivers/driver.routes.js";
+import rickshawRoutes from "./features/rickshaws/rickshaw.routes.js";
 
 import adminRouter from "./features/admin/admin.routes.js";
 
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/drivers", driverRoutes);
+app.use("/api/rickshaws", rickshawRoutes);
 
 app.get("/", (_req, res) => {
     res.json({

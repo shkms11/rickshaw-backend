@@ -1,7 +1,7 @@
 import type { Request, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
-type AdminRole = "ADMIN" | "SUPER_ADMIN";
+type AuthorizedRole = "ADMIN" | "SUPER_ADMIN" | "OWNER" | "DRIVER";
 type AuthenticatedRequest = Request & {
     auth?: { userId: string; role: string };
 };
@@ -50,10 +50,10 @@ export const authenticate: RequestHandler = (req, res, next) => {
 };
 
 export const requireRole =
-    (...roles: AdminRole[]): RequestHandler =>
+    (...roles: AuthorizedRole[]): RequestHandler =>
     (req, res, next) => {
         const auth = (req as AuthenticatedRequest).auth;
-        if (!auth || !roles.includes(auth.role as AdminRole)) {
+        if (!auth || !roles.includes(auth.role as AuthorizedRole)) {
             return res
                 .status(403)
                 .json({

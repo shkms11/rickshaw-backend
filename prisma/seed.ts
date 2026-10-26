@@ -7,13 +7,12 @@ const prisma = new PrismaClient();
 async function main() {
     console.log("🌱 Seeding database...");
 
-    // =========================
-    // CLEAR EXISTING DATA
-    // =========================
+    // DEMO ONLY: this seed resets application records before rebuilding the demo dataset.
 
     await prisma.complaint.deleteMany();
     await prisma.payment.deleteMany();
     await prisma.trip.deleteMany();
+    await prisma.driverLocation.deleteMany();
     await prisma.rickshaw.deleteMany();
     await prisma.driver.deleteMany();
     await prisma.owner.deleteMany();
@@ -29,6 +28,7 @@ async function main() {
         data: {
             name: "System Admin",
             email: "admin@rickshaw.com",
+            phone: "+8801700000001",
             password,
             role: "ADMIN",
             approvalStatus: "APPROVED",
@@ -39,6 +39,7 @@ async function main() {
         data: {
             name: "Rahman Transport",
             email: "rahman@rickshaw.com",
+            phone: "+8801800000002",
             password,
             role: "OWNER",
             approvalStatus: "APPROVED",
@@ -49,6 +50,7 @@ async function main() {
         data: {
             name: "Dhaka Rickshaw Services",
             email: "dhaka@rickshaw.com",
+            phone: "+8801900000003",
             password,
             role: "OWNER",
             approvalStatus: "APPROVED",
@@ -59,6 +61,7 @@ async function main() {
         data: {
             name: "Rahim Ahmed",
             email: "rahim@rickshaw.com",
+            phone: "+8801600000004",
             password,
             role: "DRIVER",
             approvalStatus: "APPROVED",
@@ -69,6 +72,7 @@ async function main() {
         data: {
             name: "Karim Uddin",
             email: "karim@rickshaw.com",
+            phone: "+8801500000005",
             password,
             role: "DRIVER",
             approvalStatus: "APPROVED",
@@ -79,6 +83,7 @@ async function main() {
         data: {
             name: "Sakib Hasan",
             email: "sakib@rickshaw.com",
+            phone: "+8801300000006",
             password,
             role: "DRIVER",
             approvalStatus: "APPROVED",
@@ -90,6 +95,7 @@ async function main() {
         data: {
             name: "Nusrat Jahan",
             email: "nusrat@example.com",
+            phone: "+8801400000007",
             password,
             role: "DRIVER",
             approvalStatus: "APPROVED",
@@ -100,6 +106,7 @@ async function main() {
         data: {
             name: "Tanvir Hasan",
             email: "tanvir@example.com",
+            phone: "+8801700000008",
             password,
             role: "DRIVER",
             approvalStatus: "APPROVED",
@@ -190,6 +197,24 @@ async function main() {
             status: "MAINTENANCE",
             ownerId: ownerProfile2.id,
         },
+    });
+
+    // These coordinates are fictional demo points; they are not real driver GPS reports.
+    await prisma.driverLocation.createMany({
+        data: [
+            {
+                driverId: driverProfile1.id,
+                latitude: 23.7465,
+                longitude: 90.376,
+                source: "DEMO",
+            },
+            {
+                driverId: driverProfile2.id,
+                latitude: 23.8759,
+                longitude: 90.3795,
+                source: "DEMO",
+            },
+        ],
     });
 
     // =========================
@@ -319,12 +344,12 @@ async function main() {
 
     console.log("Demo accounts");
     console.log("------------------------------");
-    console.log("Admin:  admin@rickshaw.com");
-    console.log("Owner:  rahman@rickshaw.com");
-    console.log("Owner:  dhaka@rickshaw.com");
-    console.log("Driver: rahim@rickshaw.com");
-    console.log("Driver: karim@rickshaw.com");
-    console.log("Driver: sakib@rickshaw.com");
+    console.log("Admin:  admin@rickshaw.com / +8801700000001");
+    console.log("Owner:  rahman@rickshaw.com / +8801800000002");
+    console.log("Owner:  dhaka@rickshaw.com / +8801900000003");
+    console.log("Driver: rahim@rickshaw.com / +8801600000004");
+    console.log("Driver: karim@rickshaw.com / +8801500000005");
+    console.log("Driver: sakib@rickshaw.com / +8801300000006");
     console.log("------------------------------");
     console.log("Password: Password123!");
     console.log("");
@@ -334,6 +359,7 @@ async function main() {
     console.log("• 2 owners");
     console.log("• 3 drivers");
     console.log("• 4 rickshaws");
+    console.log("• 2 demo-only GPS locations");
     console.log("• 4 trips");
     console.log("• 3 payments");
     console.log("• 3 complaints");
