@@ -7,7 +7,10 @@
         "dev": "tsx watch src/server.ts",
         "build": "prisma generate && tsc",
         "start": "node dist/server.js",
-        "seed": "tsx prisma/seed.ts"
+        "db:status": "prisma migrate status",
+        "db:migrate": "prisma migrate deploy",
+        "db:seed": "prisma db seed",
+        "seed": "prisma db seed"
     },
     "keywords": [
         "rickshaw",

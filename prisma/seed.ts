@@ -9,6 +9,26 @@ async function main() {
 
     // DEMO ONLY: this seed resets application records before rebuilding the demo dataset.
 
+    const existingRecordCounts = await prisma.$transaction([
+        prisma.complaint.count(),
+        prisma.payment.count(),
+        prisma.trip.count(),
+        prisma.driverLocation.count(),
+        prisma.rickshaw.count(),
+        prisma.driver.count(),
+        prisma.owner.count(),
+        prisma.user.count(),
+    ]);
+
+    if (
+        existingRecordCounts.some((count) => count > 0) &&
+        process.env.ALLOW_DESTRUCTIVE_SEED !== "true"
+    ) {
+        throw new Error(
+            "The seed resets all application records. Set ALLOW_DESTRUCTIVE_SEED=true to confirm before seeding this non-empty database.",
+        );
+    }
+
     await prisma.complaint.deleteMany();
     await prisma.payment.deleteMany();
     await prisma.trip.deleteMany();
