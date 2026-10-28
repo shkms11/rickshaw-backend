@@ -8,13 +8,19 @@ import adminRouter from "./features/admin/admin.routes.js";
 
 const app = express();
 
+const defaultCorsOrigins = [
+    "https://rickshaw-frontend-gjo4b2nhx-shkms11.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+];
+const corsOrigins = (process.env.CORS_ORIGINS ?? defaultCorsOrigins.join(","))
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 app.use(
     cors({
-        origin: [
-            "https://rickshaw-frontend-gjo4b2nhx-shkms11.vercel.app",
-            "http://localhost:5173",
-            "http://localhost:3000",
-        ],
+        origin: corsOrigins,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }),

@@ -24,6 +24,20 @@ npm run dev
 The API runs at `http://localhost:5000`.
 Run `npx prisma migrate deploy` when deploying an existing database.
 
+## CORS and deployment
+
+The backend allows the local Vite and React dev-server origins by default, plus
+the production frontend origin. Set `CORS_ORIGINS` to a comma-separated list of
+exact frontend origins to override these defaults (for example, in Vercel's
+backend project environment variables). Do not include URL paths or a trailing
+slash. Redeploy the backend after changing the variable.
+
+Set the frontend's `VITE_API_URL` to the backend URL ending in `/api` in Vercel.
+Vite embeds this value at build time, so redeploy the frontend after changing it.
+If Vercel Deployment Protection is enabled for the backend deployment, allow
+public access to the API deployment; an SSO redirect cannot be used by browser
+API requests and may appear as a CORS error.
+
 ## Authentication and admin endpoints
 
 - `POST /api/auth/register` accepts `{ "name", "email", "password", "role", "licenseNo" }`. Role may be `DRIVER` or `OWNER` and defaults to `DRIVER`. Driver registrations require a unique license number. The owner or driver profile is created with the account, and new accounts require approval.
