@@ -64,6 +64,18 @@ enum LocationSource {
   DEMO
 }
 
+enum FleetActionType {
+  LOST_RICKSHAW
+  REMOVE_RICKSHAW
+}
+
+enum FleetActionStatus {
+  OPEN
+  APPROVED
+  REJECTED
+  RESOLVED
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -83,6 +95,8 @@ model User {
 
   payments   Payment[]
   complaints Complaint[]
+  createdFleetActions FleetAction[] @relation("FleetActionCreator")
+  reviewedFleetActions FleetAction[] @relation("FleetActionReviewer")
 
   @@index([role])
   @@index([name])
@@ -146,11 +160,32 @@ model Rickshaw {
   driver   Driver? @relation(fields: [driverId], references: [id])
 
   trips Trip[]
+  fleetActions FleetAction[]
 
   createdAt DateTime @default(now())
 
   @@index([ownerId])
   @@index([status])
+  @@index([createdAt])
+}
+
+model FleetAction {
+  id          String            @id @default(cuid())
+  rickshawId  String
+  createdById String
+  reviewedById String?
+  type        FleetActionType
+  status      FleetActionStatus @default(OPEN)
+  message     String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  rickshaw  Rickshaw @relation(fields: [rickshawId], references: [id], onDelete: Cascade)
+  createdBy User     @relation("FleetActionCreator", fields: [createdById], references: [id])
+  reviewedBy User?   @relation("FleetActionReviewer", fields: [reviewedById], references: [id])
+
+  @@index([rickshawId, status])
+  @@index([type, status])
   @@index([createdAt])
 }
 

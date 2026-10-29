@@ -3,6 +3,7 @@ import {
     createDriver,
     getDrivers,
     getDriverById,
+    getMyDriverProfile,
     updateDriverStatus,
 } from "./driver.controller.js";
 import { authenticate, requireRole } from "../../middleware/auth.middleware.js";
@@ -14,6 +15,7 @@ import {
 
 const router = Router();
 
+router.get("/me", authenticate, requireRole("DRIVER"), getMyDriverProfile);
 router.post("/me/location", authenticate, requireRole("DRIVER"), saveMyLocation);
 router.delete("/me/location", authenticate, requireRole("DRIVER"), stopMyLocation);
 router.get(

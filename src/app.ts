@@ -5,6 +5,8 @@ import authRoutes from "./features/auth/auth.routes.js";
 import driverRoutes from "./features/drivers/driver.routes.js";
 import rickshawRoutes from "./features/rickshaws/rickshaw.routes.js";
 import adminRouter from "./features/admin/admin.routes.js";
+import complaintRoutes from "./features/complaints/complaint.routes.js";
+import fleetActionRoutes from "./features/rickshaws/fleetActions.routes.js";
 
 const app = express();
 
@@ -40,5 +42,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/rickshaws", rickshawRoutes);
 app.use("/api/admin", adminRouter);
+app.use("/api/complaints", complaintRoutes);
+app.use("/api/fleet-actions", fleetActionRoutes);
 
 export default app;
