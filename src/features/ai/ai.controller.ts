@@ -1,3 +1,4 @@
+/** Validate chat input and coordinate role-scoped context with local or Groq replies. */
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
@@ -14,6 +15,7 @@ const chatSchema = z.object({
     language: z.enum(["en", "bn"]).default("en"),
 });
 
+/** Use private database context only for a verified, supported signed-in role. */
 export async function chat(req: Request, res: Response) {
     const parsed = chatSchema.safeParse(req.body);
     if (!parsed.success) {

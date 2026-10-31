@@ -1,3 +1,4 @@
+/** Protect owner plan endpoints; payment callbacks instead validate with SSLCommerz. */
 import { Router } from "express";
 import { authenticate, requireRole } from "../../middleware/auth.middleware.js";
 import {
@@ -18,4 +19,5 @@ router.post("/sslcommerz/ipn", handleSubscriptionPaymentIpn);
 router.post("/sslcommerz/fail", handleSubscriptionPaymentFailure);
 router.post("/sslcommerz/cancel", handleSubscriptionPaymentCancellation);
 
+/** Router mounted at `/api/subscriptions`. */
 export default router;

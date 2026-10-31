@@ -1,3 +1,4 @@
+/** Save and share driver GPS points, retaining the final point when sharing stops. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
@@ -11,6 +12,7 @@ const locationSchema = z.object({
     accuracy: z.number().nonnegative().optional(),
 });
 
+/** Upsert the signed-in driver's latest LIVE point and mark the driver online. */
 export async function saveMyLocation(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     const parsed = locationSchema.safeParse(req.body);
@@ -55,6 +57,7 @@ export async function saveMyLocation(req: Request, res: Response) {
     }
 }
 
+/** List recent and historical points, limiting owner results to their own fleet. */
 export async function listDriverLocations(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -104,6 +107,7 @@ export async function listDriverLocations(req: Request, res: Response) {
     }
 }
 
+/** Atomically mark the last LIVE point as LAST_KNOWN and set the driver offline. */
 export async function stopMyLocation(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });

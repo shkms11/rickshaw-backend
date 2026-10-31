@@ -1,3 +1,5 @@
+/** Shared phone-format helpers keep registration, login, and search consistent. */
+/** Normalize valid Bangladesh mobile input to its canonical +880 format. */
 export function normalizeBangladeshPhone(value: string): string | null {
     let digits = value.replace(/\D/g, "");
     if (digits.startsWith("00880")) digits = digits.slice(2);
@@ -7,6 +9,7 @@ export function normalizeBangladeshPhone(value: string): string | null {
     return `+${digits}`;
 }
 
+/** Prepare a phone query for partial database matching without punctuation. */
 export function phoneSearchDigits(value: string): string {
     const digits = value.replace(/\D/g, "");
     if (digits.startsWith("00880")) return digits.slice(2);

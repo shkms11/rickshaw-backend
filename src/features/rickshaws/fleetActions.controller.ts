@@ -1,3 +1,4 @@
+/** Track lost-vehicle alerts and removal requests linked to rickshaws and users. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
@@ -14,6 +15,7 @@ const reviewSchema = z.object({
 });
 const activeTripStatuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS"] as const;
 
+/** List actions visible to the caller's role: fleet, own reports, or all as admin. */
 export async function listFleetActions(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -50,6 +52,7 @@ export async function listFleetActions(req: Request, res: Response) {
     }
 }
 
+/** Create one open lost-vehicle alert for a vehicle owned by/reported by the caller. */
 export async function createLostRickshawAlert(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -95,6 +98,7 @@ export async function createLostRickshawAlert(req: Request, res: Response) {
     }
 }
 
+/** Ask an admin to retire an idle vehicle; the request itself does not retire it. */
 export async function createRickshawRemovalRequest(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -146,6 +150,7 @@ export async function createRickshawRemovalRequest(req: Request, res: Response) 
     }
 }
 
+/** Review an open action and apply an approved retirement in the same transaction. */
 export async function reviewFleetAction(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });

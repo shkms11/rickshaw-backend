@@ -1,3 +1,4 @@
+/** Load environment settings and start the Express app on the configured port. */
 import "dotenv/config";
 
 import app from "./app.js";

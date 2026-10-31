@@ -1,3 +1,4 @@
+/** Serve owner billing status and implement the optional SSLCommerz checkout flow. */
 import type { Request, Response } from "express";
 import { randomBytes } from "node:crypto";
 import {
@@ -47,6 +48,7 @@ function redirectToFrontend(res: Response, status: "paid" | "failed" | "cancelle
     return res.redirect(303, frontendRedirect(status));
 }
 
+/** Return trial/paid dates and current monthly pricing for the signed-in owner. */
 export async function getOwnerSubscription(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -91,6 +93,7 @@ export async function getOwnerSubscription(req: Request, res: Response) {
     }
 }
 
+/** Record a pending amount, request a hosted checkout URL, and retain its session ID. */
 export async function startSubscriptionCheckout(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -288,6 +291,7 @@ async function confirmSubscriptionPayment(req: Request) {
             return false;
         }
 
+        // Mark payment and extend access atomically so callbacks cannot grant partial plans.
         const paymentActivated = await prisma.$transaction(async (transaction) => {
             const updated = await transaction.ownerSubscriptionPayment.updateMany({
                 where: { id: payment.id, status: "PENDING" },
@@ -330,11 +334,13 @@ async function confirmSubscriptionPayment(req: Request) {
     }
 }
 
+/** Validate a successful browser callback before redirecting the owner to the app. */
 export async function handleSubscriptionPaymentSuccess(req: Request, res: Response) {
     const paid = await confirmSubscriptionPayment(req);
     return redirectToFrontend(res, paid ? "paid" : "failed");
 }
 
+/** Process the gateway's server callback and return a confirmation status. */
 export async function handleSubscriptionPaymentIpn(req: Request, res: Response) {
     const paid = await confirmSubscriptionPayment(req);
     return res.status(paid ? 200 : 400).json({
@@ -342,6 +348,7 @@ export async function handleSubscriptionPaymentIpn(req: Request, res: Response) 
     });
 }
 
+/** Mark an outstanding checkout failed when SSLCommerz reports payment failure. */
 export async function handleSubscriptionPaymentFailure(req: Request, res: Response) {
     const transactionId = typeof req.body?.tran_id === "string" ? req.body.tran_id : "";
     if (transactionId) {
@@ -358,6 +365,7 @@ export async function handleSubscriptionPaymentFailure(req: Request, res: Respon
     return redirectToFrontend(res, "failed");
 }
 
+/** Mark an outstanding checkout failed when the owner cancels hosted checkout. */
 export async function handleSubscriptionPaymentCancellation(req: Request, res: Response) {
     const transactionId = typeof req.body?.tran_id === "string" ? req.body.tran_id : "";
     if (transactionId) {

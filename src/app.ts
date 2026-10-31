@@ -1,3 +1,4 @@
+/** Build the Express API: shared middleware first, then feature routers by URL prefix. */
 import express from "express";
 import cors from "cors";
 
@@ -33,14 +34,14 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Health check
+// A lightweight check that confirms the HTTP process is responding.
 app.get("/", (_req, res) => {
     res.status(200).json({
         message: "Rickshaw API is running",
     });
 });
 
-// API routes
+// Route modules own endpoint-specific middleware and controller wiring.
 app.use("/api/auth", authRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/rickshaws", rickshawRoutes);

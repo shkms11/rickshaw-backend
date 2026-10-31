@@ -1,3 +1,4 @@
+/** Create user-owned reports and provide admin complaint queue/status operations. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
@@ -13,6 +14,7 @@ const complaintStatusSchema = z.object({
     status: z.enum(["OPEN", "RESOLVED"]),
 });
 
+/** Create a complaint linked to the account identity added by auth middleware. */
 export async function createComplaint(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -40,6 +42,7 @@ export async function createComplaint(req: Request, res: Response) {
     }
 }
 
+/** Return a bounded, newest-first admin queue with reporter details. */
 export async function listAdminComplaints(_req: Request, res: Response) {
     try {
         const complaints = await prisma.complaint.findMany({
@@ -61,6 +64,7 @@ export async function listAdminComplaints(_req: Request, res: Response) {
     }
 }
 
+/** Change an existing complaint between OPEN and RESOLVED. */
 export async function updateComplaintStatus(req: Request, res: Response) {
     const parsed = complaintStatusSchema.safeParse(req.body);
     if (!parsed.success) {

@@ -1,3 +1,4 @@
+/** Connect driver self-service and admin endpoints to their controllers and guards. */
 import { Router } from "express";
 import {
     createDriver,
@@ -29,4 +30,5 @@ router.get("/", authenticate, requireRole("ADMIN", "SUPER_ADMIN"), getDrivers);
 router.get("/:id", authenticate, requireRole("ADMIN", "SUPER_ADMIN"), getDriverById);
 router.patch("/:id/status", authenticate, requireRole("ADMIN", "SUPER_ADMIN"), updateDriverStatus);
 
+/** Router mounted at `/api/drivers`. */
 export default router;

@@ -1,3 +1,4 @@
+/** Verify bearer JWTs and enforce role gates before protected controllers run. */
 import type { Request, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
@@ -6,6 +7,7 @@ type AuthenticatedRequest = Request & {
     auth?: { userId: string; role: string };
 };
 
+/** Verify the bearer token and attach its user ID and role to the request. */
 export const authenticate: RequestHandler = (req, res, next) => {
     const authorization = req.headers.authorization;
     const token = authorization?.startsWith("Bearer ")
@@ -49,6 +51,7 @@ export const authenticate: RequestHandler = (req, res, next) => {
     }
 };
 
+/** Build a route guard that allows only the listed authenticated roles. */
 export const requireRole =
     (...roles: AuthorizedRole[]): RequestHandler =>
     (req, res, next) => {

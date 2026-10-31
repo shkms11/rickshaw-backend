@@ -1,9 +1,11 @@
+/** Admin read/write operations over users, fleet, locations, trips, and reports. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { phoneSearchDigits } from "../../shared/phone.js";
 
 const prisma = new PrismaClient();
 
+/** Aggregate current fleet, live-location, active-trip, and complaint counts. */
 export async function getDashboardSummary(_req: Request, res: Response) {
     try {
         const [totalRickshaws, onlineDrivers, activeTrips, openComplaints] =
@@ -27,6 +29,7 @@ export async function getDashboardSummary(_req: Request, res: Response) {
     }
 }
 
+/** List pending public driver and owner registrations for administrative review. */
 export async function listPendingApprovals(_req: Request, res: Response) {
     try {
         const approvals = await prisma.user.findMany({
@@ -51,6 +54,7 @@ export async function listPendingApprovals(_req: Request, res: Response) {
     }
 }
 
+/** Approve or reject a still-pending driver or owner account. */
 export async function decideApproval(req: Request, res: Response) {
     const status = req.body?.status;
     if (status !== "APPROVED" && status !== "REJECTED") {
@@ -97,6 +101,7 @@ function phoneRelationFilter(query: string) {
     return phoneDigits.length >= 4 ? [{ phone: { contains: phoneDigits } }] : [];
 }
 
+/** Search related records and shape them into the admin UI's common result format. */
 export async function searchAdmin(req: Request, res: Response) {
     const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
     const selectedType = typeof req.query.type === "string" ? req.query.type.toLowerCase() : "all";

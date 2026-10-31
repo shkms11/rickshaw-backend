@@ -1,3 +1,4 @@
+/** Connect vehicle listing/management routes and enforce owner/admin permissions. */
 import { Router } from "express";
 import { authenticate, requireRole } from "../../middleware/auth.middleware.js";
 import {

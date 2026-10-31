@@ -8,6 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums keep role, approval, availability, and payment states consistent across API and DB.
 enum Role {
   SUPER_ADMIN
   ADMIN
@@ -90,6 +91,7 @@ model User {
   driver Driver?
   owner  Owner?
 
+  // Named relations distinguish this user's passenger trips from trips they drive.
   passengerTrips Trip[] @relation("PassengerTrips")
   driverTrips    Trip[] @relation("DriverTrips")
 
@@ -136,6 +138,7 @@ model Owner {
 }
 
 model OwnerSubscription {
+  // Subscription access is separate from trip-fare payments below.
   id              String   @id @default(cuid())
   ownerId         String   @unique
   trialStartedAt  DateTime @default(now())
@@ -168,6 +171,7 @@ model OwnerSubscriptionPayment {
 }
 
 model DriverLocation {
+  // One latest point per driver; stopping GPS changes LIVE to LAST_KNOWN rather than deleting it.
   id        String   @id @default(cuid())
   driverId  String   @unique
   latitude  Float
@@ -204,6 +208,7 @@ model Rickshaw {
 }
 
 model FleetAction {
+  // The named user relations preserve both the reporter and the admin reviewer.
   id          String            @id @default(cuid())
   rickshawId  String
   createdById String
@@ -224,6 +229,7 @@ model FleetAction {
 }
 
 model Trip {
+  // Driver IDs here reference User IDs, unlike Rickshaw.driverId which references Driver.id.
   id String @id @default(cuid())
 
   passengerId String
@@ -255,6 +261,7 @@ model Trip {
 }
 
 model Payment {
+  // This is a trip fare (one payment per trip), not an owner plan payment.
   id String @id @default(cuid())
 
   tripId String @unique

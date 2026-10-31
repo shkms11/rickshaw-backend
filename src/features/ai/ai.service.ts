@@ -1,10 +1,14 @@
+/** Classify assistant questions, query only role-visible data, and format replies. */
 import { PrismaClient } from "../../generated/prisma/client.js";
 
 const prisma = new PrismaClient();
 const LIVE_WINDOW_MS = 2 * 60 * 1000;
 
+/** Identity fields copied from a verified JWT for role-scoped database queries. */
 export type AiIdentity = { userId: string; role: string };
+/** Supported language selector used by local and hosted assistant responses. */
 export type AiLanguage = "en" | "bn";
+/** Structured private context supplied to a reply formatter/provider. */
 export type AiContext = {
     role: string;
     intent?: "location" | "traffic";
@@ -34,10 +38,12 @@ function extractArea(question: string) {
     return /^(?:my\s+)?fleet$/i.test(area) ? "" : area;
 }
 
+/** Detect location-oriented prompts so data requests can bypass the LLM. */
 export function isLocationQuestion(question: string) {
     return /\b(where is|where's|where am i|my location|current location|location of|locate|find|track)\b/i.test(question);
 }
 
+/** Detect area-usage prompts backed by recorded trip locations. */
 export function isTrafficQuestion(question: string) {
     return /\b(traffic|area|busy|popular|how many rickshaws|rickshaws in|trips in)\b/i.test(question);
 }
@@ -157,6 +163,7 @@ async function getAreaUsage(identity: AiIdentity, question: string) {
     };
 }
 
+/** Query summaries and lookups filtered to the caller's role and ownership. */
 export async function buildAiContext(
     identity: AiIdentity,
     question: string,
@@ -298,6 +305,7 @@ export async function buildAiContext(
     return { role: identity.role, ...requestContext, summary: {} };
 }
 
+/** Format data answers and built-in general help without an external AI service. */
 export function createLocalReply(
     question: string,
     context?: AiContext,
@@ -430,6 +438,7 @@ export function createLocalReply(
         : "I can help with general questions, transport safety, GPS tracking, and how this fleet app works. Sign in for private fleet reports.";
 }
 
+/** Ask Groq for general conversation; return null to trigger the local fallback. */
 export async function getGroqReply(
     question: string,
     context: AiContext | null,

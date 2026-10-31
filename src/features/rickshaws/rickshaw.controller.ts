@@ -1,3 +1,4 @@
+/** Manage owner fleets and driver assignments using the Rickshaw relations. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
@@ -16,6 +17,7 @@ const assignDriverSchema = z.object({
 
 const activeTripStatuses = ["REQUESTED", "ACCEPTED", "IN_PROGRESS"] as const;
 
+/** List all vehicles for admins or only the caller's vehicles for owners. */
 export async function listRickshaws(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -46,6 +48,7 @@ export async function listRickshaws(req: Request, res: Response) {
     }
 }
 
+/** Create a vehicle under the owner profile associated with the caller's user ID. */
 export async function createRickshaw(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     const parsed = createSchema.safeParse(req.body);
@@ -82,6 +85,7 @@ export async function createRickshaw(req: Request, res: Response) {
     }
 }
 
+/** Find approved drivers who are free or already assigned within this owner's fleet. */
 export async function listOwnerDrivers(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -119,6 +123,7 @@ export async function listOwnerDrivers(req: Request, res: Response) {
     }
 }
 
+/** Validate ownership, driver approval, and trip state before changing assignment. */
 export async function assignRickshawDriver(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -189,6 +194,7 @@ export async function assignRickshawDriver(req: Request, res: Response) {
     }
 }
 
+/** Change vehicle availability and clear its driver when it becomes inactive. */
 export async function updateRickshawStatus(req: Request, res: Response) {
     const statusSchema = z.object({
         status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]),

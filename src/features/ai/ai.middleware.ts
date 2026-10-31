@@ -1,3 +1,4 @@
+/** Optional JWT parsing lets guest chat stay public while enabling scoped insights. */
 import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
@@ -5,6 +6,7 @@ type AiRequest = {
     auth?: { userId: string; role: string };
 };
 
+/** Attach a verified identity when supplied; reject malformed supplied tokens. */
 export const optionalAuthentication: RequestHandler = (req, res, next) => {
     const authorization = req.headers.authorization;
     if (!authorization) return next();

@@ -1,3 +1,4 @@
+/** Validate credentials, persist user/profile records, and issue approved-user JWTs. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 import bcrypt from "bcrypt";
@@ -32,6 +33,7 @@ const loginSchema = z.object({
     password: z.string().min(1),
 });
 
+/** Create a pending driver or owner account and its role-specific profile. */
 export const register = async (req: Request, res: Response) => {
     try {
         const parsed = registerSchema.safeParse(req.body);
@@ -107,6 +109,7 @@ export const register = async (req: Request, res: Response) => {
     }
 };
 
+/** Check the identifier/password, reject unapproved accounts, then sign a JWT. */
 export const login = async (req: Request, res: Response) => {
     try {
         const parsed = loginSchema.safeParse(req.body);

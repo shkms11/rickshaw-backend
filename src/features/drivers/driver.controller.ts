@@ -1,9 +1,11 @@
+/** Driver profile and status endpoints; profile data is joined from User and fleet records. */
 import type { Request, Response } from "express";
 import { PrismaClient } from "../../generated/prisma/client.js";
 
 const prisma = new PrismaClient();
 type AuthRequest = Request & { auth?: { userId: string; role: string } };
 
+/** Return the signed-in driver's account, assignment, and GPS freshness. */
 export const getMyDriverProfile = async (req: Request, res: Response) => {
     const auth = (req as AuthRequest).auth;
     if (!auth) return res.status(401).json({ message: "Authentication required" });
@@ -46,7 +48,7 @@ export const getMyDriverProfile = async (req: Request, res: Response) => {
     }
 };
 
-// Create a driver profile
+/** Create a driver profile for an existing user (admin endpoint). */
 export const createDriver = async (req: Request, res: Response) => {
     try {
         const { userId, licenseNo } = req.body;
@@ -76,7 +78,7 @@ export const createDriver = async (req: Request, res: Response) => {
     }
 };
 
-// Get all drivers
+/** List drivers with the related account and current vehicle assignment. */
 export const getDrivers = async (_req: Request, res: Response) => {
     try {
         const drivers = await prisma.driver.findMany({
@@ -107,7 +109,7 @@ export const getDrivers = async (_req: Request, res: Response) => {
     }
 };
 
-// Get one driver by ID
+/** Load one driver and its user/vehicle relations for admin detail views. */
 export const getDriverById = async (req: Request, res: Response) => {
     try {
         const driver = await prisma.driver.findUnique({
@@ -140,7 +142,7 @@ export const getDriverById = async (req: Request, res: Response) => {
     }
 };
 
-// Update driver status
+/** Update driver availability; ONLINE requires a recently saved live GPS point. */
 export const updateDriverStatus = async (req: Request, res: Response) => {
     try {
         const status = req.body?.status;

@@ -1,11 +1,16 @@
+/** Shared billing queries and plan calculations used by subscription controllers. */
 import { PrismaClient } from "../../generated/prisma/client.js";
 
+/** Prisma connection shared by the billing controller and helper functions. */
 export const prisma = new PrismaClient();
 
+/** The owner trial window starts when the billing account is first loaded. */
 export const TRIAL_DAYS = 7;
+/** Monthly BDT price for each non-inactive vehicle in an owner's fleet. */
 export const PRICE_PER_RICKSHAW = 100;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+/** Owner subscription dates plus the fleet count used to calculate pricing. */
 export type OwnerBillingAccount = {
     ownerId: string;
     subscription: {
@@ -17,6 +22,7 @@ export type OwnerBillingAccount = {
     rickshawCount: number;
 };
 
+/** Load the owner, lazily create/refresh demo trial state, and count billable fleet. */
 export async function getOwnerBillingAccount(
     userId: string,
 ): Promise<OwnerBillingAccount | null> {
@@ -61,10 +67,12 @@ export async function getOwnerBillingAccount(
     return { ownerId: owner.id, subscription, rickshawCount };
 }
 
+/** Calculate the trial's exclusive end timestamp from its start. */
 export function getTrialEnd(trialStartedAt: Date) {
     return new Date(trialStartedAt.getTime() + TRIAL_DAYS * DAY_IN_MS);
 }
 
+/** Check whether the trial or a paid extension currently grants plan status. */
 export function hasActiveSubscription(
     subscription: OwnerBillingAccount["subscription"],
     now = new Date(),
@@ -73,6 +81,7 @@ export function hasActiveSubscription(
         (subscription.paidUntil !== null && subscription.paidUntil > now);
 }
 
+/** Advance by one calendar month while clamping dates such as January 31. */
 export function addOneMonth(date: Date) {
     const result = new Date(date);
     const day = result.getUTCDate();
@@ -85,6 +94,7 @@ export function addOneMonth(date: Date) {
     return result;
 }
 
+/** Calculate monthly BDT pricing from the current billable vehicle count. */
 export function getMonthlyPrice(rickshawCount: number) {
     return rickshawCount * PRICE_PER_RICKSHAW;
 }
