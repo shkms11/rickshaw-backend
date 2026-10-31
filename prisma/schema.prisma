@@ -127,9 +127,43 @@ model Owner {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   rickshaws Rickshaw[]
+  subscription OwnerSubscription?
+  subscriptionPayments OwnerSubscriptionPayment[]
 
   createdAt DateTime @default(now())
 
+  @@index([createdAt])
+}
+
+model OwnerSubscription {
+  id              String   @id @default(cuid())
+  ownerId         String   @unique
+  trialStartedAt  DateTime @default(now())
+  paidUntil       DateTime?
+  isDemo          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner    Owner                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([paidUntil])
+}
+
+model OwnerSubscriptionPayment {
+  id             String        @id @default(cuid())
+  ownerId        String
+  transactionId  String        @unique
+  gatewaySessionId String?
+  validationId   String?
+  amount         Decimal       @db.Decimal(10, 2)
+  rickshawCount  Int
+  status         PaymentStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  paidAt         DateTime?
+
+  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, status])
   @@index([createdAt])
 }
 

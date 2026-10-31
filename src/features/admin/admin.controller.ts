@@ -126,14 +126,14 @@ export async function searchAdmin(req: Request, res: Response) {
                     name: true,
                     email: true,
                     phone: true,
-                    driver: { select: { licenseNo: true } },
+                    driver: { select: { id: true, licenseNo: true } },
                     owner: { select: { id: true } },
                 },
                 take: 25,
                 orderBy: { name: "asc" },
             });
             results.push(...users.map<SearchResult>((user) => ({
-                id: user.id,
+                id: user.driver?.id ?? user.id,
                 name: user.name,
                 type: user.driver ? "driver" : user.owner ? "owner" : "user",
                 description: [

@@ -67,6 +67,7 @@ export async function listDriverLocations(req: Request, res: Response) {
                     : {}),
             },
             select: {
+                driverId: true,
                 latitude: true,
                 longitude: true,
                 accuracy: true,
@@ -75,7 +76,12 @@ export async function listDriverLocations(req: Request, res: Response) {
                 driver: {
                     select: {
                         user: { select: { name: true } },
-                        rickshaw: { select: { plateNo: true } },
+                        rickshaw: {
+                            select: {
+                                plateNo: true,
+                                owner: { select: { user: { select: { name: true } } } },
+                            },
+                        },
                     },
                 },
             },
@@ -84,8 +90,10 @@ export async function listDriverLocations(req: Request, res: Response) {
         return res.json({
             locations: locations.map((location) => ({
                 ...location,
+                driverId: location.driverId,
                 driverName: location.driver.user.name,
                 rickshawPlate: location.driver.rickshaw?.plateNo ?? null,
+                ownerName: location.driver.rickshaw?.owner.user.name ?? null,
                 isLive: location.source === "LIVE" &&
                     Date.now() - location.updatedAt.getTime() <= 2 * 60 * 1000,
             })),

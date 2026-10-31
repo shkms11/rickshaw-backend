@@ -149,6 +149,14 @@ async function main() {
         },
     });
 
+    await prisma.ownerSubscription.createMany({
+        data: [ownerProfile1.id, ownerProfile2.id].map((ownerId) => ({
+            ownerId,
+            trialStartedAt: new Date(),
+            isDemo: true,
+        })),
+    });
+
     // =========================
     // DRIVERS
     // =========================

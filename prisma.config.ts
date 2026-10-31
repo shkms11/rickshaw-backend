@@ -3,6 +3,16 @@
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
+function getMigrationDatabaseUrl() {
+  if (process.env.DIRECT_URL) return process.env.DIRECT_URL;
+
+  const url = new URL(env("DATABASE_URL"));
+  if (url.hostname.endsWith(".neon.tech")) {
+    url.hostname = url.hostname.replace("-pooler.", ".");
+  }
+  return url.toString();
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -11,6 +21,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: process.env.DIRECT_URL ?? env("DATABASE_URL"),
+    url: getMigrationDatabaseUrl(),
   },
 });

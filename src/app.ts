@@ -7,6 +7,8 @@ import rickshawRoutes from "./features/rickshaws/rickshaw.routes.js";
 import adminRouter from "./features/admin/admin.routes.js";
 import complaintRoutes from "./features/complaints/complaint.routes.js";
 import fleetActionRoutes from "./features/rickshaws/fleetActions.routes.js";
+import subscriptionRoutes from "./features/subscriptions/subscription.routes.js";
+import aiRoutes from "./features/ai/ai.routes.js";
 
 const app = express();
 
@@ -29,6 +31,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 // Health check
 app.get("/", (_req, res) => {
@@ -44,5 +47,7 @@ app.use("/api/rickshaws", rickshawRoutes);
 app.use("/api/admin", adminRouter);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/fleet-actions", fleetActionRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/ai", aiRoutes);
 
 export default app;

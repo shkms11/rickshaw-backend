@@ -7,8 +7,10 @@ Express, TypeScript, Prisma, and PostgreSQL API.
 Copy `.env.example` to `.env`, set `DATABASE_URL`, and replace `JWT_SECRET`
 with a unique random value. `DATABASE_URL` can be a local PostgreSQL connection
 or Neon's pooled connection string. For Neon, optionally set `DIRECT_URL` to
-Neon's direct (unpooled) connection string; Prisma uses it for migrations and
-falls back to `DATABASE_URL` when it is omitted. Keep both URLs private.
+Neon's direct (unpooled) connection string; Prisma uses it for migrations.
+When `DATABASE_URL` is a standard Neon pooler URL and `DIRECT_URL` is omitted,
+Prisma automatically derives the direct hostname for migrations. Keep both
+URLs private.
 Generate a secret with:
 
 ```powershell
@@ -49,6 +51,48 @@ Vite embeds this value at build time, so redeploy the frontend after changing it
 If Vercel Deployment Protection is enabled for the backend deployment, allow
 public access to the API deployment; an SSO redirect cannot be used by browser
 API requests and may appear as a CORS error.
+
+Set backend `FRONTEND_URL` to the public frontend origin and `PUBLIC_API_URL` to
+the public backend origin so SSLCommerz can reach the payment callbacks.
+
+## Owner plans and payments
+
+Owners receive a 7-day trial starting when their dashboard first loads. The
+monthly plan costs BDT 100 for each non-inactive rickshaw and is renewed
+manually through hosted checkout. The trial panel warns owners before it ends.
+Trial expiry does not disable dashboard features; owners can continue using the
+demo while being prompted to subscribe. Seeded demo owners automatically
+receive a fresh 7-day trial the next time they open the dashboard after expiry.
+
+Checkout uses the SSLCommerz sandbox by default (`testbox` sandbox store); it
+does not charge real money. Payment checkout is optional: fleet management,
+GPS tracking, trial status, and plan pricing remain available if gateway
+credentials or gateway connectivity are missing. If the subscription API is
+temporarily unavailable, the dashboard still shows plan pricing based on the
+loaded fleet count and keeps all fleet features visible; trial dates and
+checkout status require the backend subscription API and database.
+
+For live payments, configure
+`SSLCOMMERZ_IS_LIVE=true`, `SSLCOMMERZ_STORE_ID`, and
+`SSLCOMMERZ_STORE_PASSWORD` with merchant credentials. Never expose live
+credentials in frontend variables. SSLCommerz must be able to reach
+`PUBLIC_API_URL` for payment callbacks; local development requires a publicly
+reachable backend URL or tunnel. The owner plan panel has an optional payment
+setup section with these settings. After adding `OwnerSubscription` tables,
+apply the migration with `npm run db:migrate`.
+
+## AI assistant
+
+The floating assistant is available without login for general questions. Signed-in
+admins, owners, and drivers can ask role-scoped questions; fleet summaries,
+assigned-driver locations, and recorded trip-area usage are read from existing
+database models on the backend. No AI-specific database tables or migration are
+needed. Without a provider key, built-in answers and data summaries still work.
+
+To enable conversational Groq answers, configure `GROQ_API_KEY` and optionally
+`GROQ_MODEL` in the backend environment, then restart/redeploy the backend.
+Keep the key on the backend; the frontend never receives it. Only the user's
+authorized, relevant data context is sent to Groq.
 
 ## Authentication and admin endpoints
 
