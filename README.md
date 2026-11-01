@@ -130,9 +130,10 @@ npm run bootstrap:super-admin
 
 It creates or resets `superadmin@rickshaw.com` without clearing any other
 database records. In production, set `SUPER_ADMIN_PASSWORD` to a password with
-at least 12 characters before running the command. Demo registration and admin
-creation accept four-character passwords outside production; production keeps
-the longer requirements. Never put passwords in frontend settings.
+at least 12 characters before running the command. Driver/owner registration
+accepts passwords of at least four characters in every environment. Scoped
+admin creation still requires 12 characters in production. Never put passwords
+in frontend settings.
 
 ## Demo data
 

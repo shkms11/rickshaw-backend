@@ -7,7 +7,6 @@ import { z } from "zod";
 import { normalizeBangladeshPhone } from "../../shared/phone.js";
 
 const prisma = new PrismaClient();
-const passwordMinimumLength = process.env.NODE_ENV === "production" ? 8 : 4;
 const registerSchema = z
     .object({
         name: z.string().trim().min(1),
@@ -16,7 +15,7 @@ const registerSchema = z
             z.literal(""),
         ]).optional(),
         phone: z.string().trim().min(1),
-        password: z.string().min(passwordMinimumLength),
+        password: z.string().min(4),
         role: z.enum(["DRIVER", "OWNER"]).default("DRIVER"),
         licenseNo: z.string().trim().optional(),
     });
