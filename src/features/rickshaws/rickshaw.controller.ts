@@ -5,10 +5,9 @@ import { z } from "zod";
 import { normalizeBangladeshPhone } from "../../shared/phone.js";
 
 const prisma = new PrismaClient();
-type AuthRequest = Request & { auth?: { userId: string; role: string } };
+type AuthRequest = Request & { auth?: { userId: string; role: string; ownerIds?: string[] } };
 
 const createSchema = z.object({
-    plateNo: z.string().trim().min(2).max(32),
     model: z.string().trim().max(80).optional(),
 });
 const assignDriverSchema = z.object({
@@ -23,7 +22,11 @@ export async function listRickshaws(req: Request, res: Response) {
     if (!auth) return res.status(401).json({ message: "Authentication required" });
     try {
         const rickshaws = await prisma.rickshaw.findMany({
-            where: auth.role === "OWNER" ? { owner: { userId: auth.userId } } : {},
+            where: auth.role === "OWNER"
+                ? { owner: { userId: auth.userId } }
+                : auth.role === "ADMIN" && auth.ownerIds?.length
+                    ? { ownerId: { in: auth.ownerIds } }
+                    : {},
             select: {
                 id: true,
                 plateNo: true,
@@ -40,6 +43,7 @@ export async function listRickshaws(req: Request, res: Response) {
                 owner: { select: { user: { select: { name: true, phone: true } } } },
             },
             orderBy: { createdAt: "desc" },
+            take: 100,
         });
         return res.json({ rickshaws });
     } catch (error) {
@@ -53,22 +57,29 @@ export async function createRickshaw(req: Request, res: Response) {
     const auth = (req as AuthRequest).auth;
     const parsed = createSchema.safeParse(req.body);
     if (!auth || !parsed.success) {
-        return res.status(400).json({ message: "A valid plate number is required" });
+        return res.status(400).json({ message: "Invalid rickshaw details" });
     }
     try {
-        const owner = await prisma.owner.findUnique({
-            where: { userId: auth.userId },
-            select: { id: true },
-        });
-        if (!owner) return res.status(404).json({ message: "Owner profile not found" });
-
-        const rickshaw = await prisma.rickshaw.create({
-            data: {
-                plateNo: parsed.data.plateNo,
-                model: parsed.data.model || null,
-                ownerId: owner.id,
-            },
-            select: { id: true, plateNo: true, model: true, status: true },
+        const rickshaw = await prisma.$transaction(async (transaction) => {
+            const owner = await transaction.owner.update({
+                where: { userId: auth.userId },
+                data: { rickshawSequence: { increment: 1 } },
+                select: {
+                    id: true,
+                    rickshawSequence: true,
+                    user: { select: { phone: true } },
+                },
+            });
+            const ownerNumber = owner.user.phone?.replace(/\D/g, "") || owner.id.slice(-8).toUpperCase();
+            const plateNo = `${ownerNumber}-${owner.rickshawSequence}`;
+            return transaction.rickshaw.create({
+                data: {
+                    plateNo,
+                    model: parsed.data.model || null,
+                    ownerId: owner.id,
+                },
+                select: { id: true, plateNo: true, model: true, status: true },
+            });
         });
         return res.status(201).json({ rickshaw });
     } catch (error) {
@@ -196,6 +207,7 @@ export async function assignRickshawDriver(req: Request, res: Response) {
 
 /** Change vehicle availability and clear its driver when it becomes inactive. */
 export async function updateRickshawStatus(req: Request, res: Response) {
+    const auth = (req as AuthRequest).auth;
     const statusSchema = z.object({
         status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]),
     });
@@ -209,6 +221,9 @@ export async function updateRickshawStatus(req: Request, res: Response) {
             const activeTrip = await prisma.trip.findFirst({
                 where: {
                     rickshawId: req.params.id as string,
+                    ...(auth?.role === "ADMIN" && auth.ownerIds?.length
+                        ? { rickshaw: { ownerId: { in: auth.ownerIds } } }
+                        : {}),
                     status: { in: [...activeTripStatuses] },
                 },
                 select: { id: true },
@@ -218,7 +233,12 @@ export async function updateRickshawStatus(req: Request, res: Response) {
             }
         }
         const result = await prisma.rickshaw.updateMany({
-            where: { id: req.params.id as string },
+            where: {
+                id: req.params.id as string,
+                ...(auth?.role === "ADMIN" && auth.ownerIds?.length
+                    ? { ownerId: { in: auth.ownerIds } }
+                    : {}),
+            },
             data: {
                 status: parsed.data.status,
                 ...(parsed.data.status === "INACTIVE" ? { driverId: null } : {}),

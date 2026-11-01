@@ -7,6 +7,7 @@ import { z } from "zod";
 import { normalizeBangladeshPhone } from "../../shared/phone.js";
 
 const prisma = new PrismaClient();
+const passwordMinimumLength = process.env.NODE_ENV === "production" ? 8 : 4;
 const registerSchema = z
     .object({
         name: z.string().trim().min(1),
@@ -15,18 +16,9 @@ const registerSchema = z
             z.literal(""),
         ]).optional(),
         phone: z.string().trim().min(1),
-        password: z.string().min(8),
+        password: z.string().min(passwordMinimumLength),
         role: z.enum(["DRIVER", "OWNER"]).default("DRIVER"),
         licenseNo: z.string().trim().optional(),
-    })
-    .superRefine((data, context) => {
-        if (data.role === "DRIVER" && !data.licenseNo) {
-            context.addIssue({
-                code: "custom",
-                path: ["licenseNo"],
-                message: "A driving license number is required for drivers",
-            });
-        }
     });
 const loginSchema = z.object({
     identifier: z.string().trim().min(1),
@@ -53,17 +45,11 @@ export const register = async (req: Request, res: Response) => {
             });
         }
         const profileData =
-            role === "DRIVER" && licenseNo
-                ? { driver: { create: { licenseNo } } }
+            role === "DRIVER"
+                ? { driver: { create: { licenseNo: licenseNo || null } } }
                 : role === "OWNER"
                   ? { owner: { create: {} } }
                   : null;
-
-        if (!profileData) {
-            return res.status(400).json({
-                message: "A driving license number is required for drivers",
-            });
-        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -156,6 +142,13 @@ export const login = async (req: Request, res: Response) => {
             return res
                 .status(401)
                 .json({ message: "Invalid email or password" });
+        }
+
+        if (user.isRestricted) {
+            return res.status(403).json({
+                code: "ACCOUNT_RESTRICTED",
+                message: "Your account has been restricted. Contact an administrator.",
+            });
         }
 
         if (user.approvalStatus === "PENDING") {

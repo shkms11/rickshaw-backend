@@ -4,7 +4,7 @@ import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
 
 const prisma = new PrismaClient();
-type AuthRequest = Request & { auth?: { userId: string; role: string } };
+type AuthRequest = Request & { auth?: { userId: string; role: string; ownerIds?: string[]; allOwnersAccess?: boolean } };
 
 const createActionSchema = z.object({
     rickshawId: z.string().trim().min(1),
@@ -26,7 +26,9 @@ export async function listFleetActions(req: Request, res: Response) {
                 ? { rickshaw: { owner: { userId: auth.userId } } }
                 : auth.role === "DRIVER"
                     ? { createdById: auth.userId }
-                    : {},
+                    : auth.role === "ADMIN" && auth.ownerIds?.length
+                        ? { rickshaw: { ownerId: { in: auth.ownerIds } } }
+                        : {},
             select: {
                 id: true,
                 type: true,
@@ -163,9 +165,18 @@ export async function reviewFleetAction(req: Request, res: Response) {
         const result = await prisma.$transaction(async (transaction) => {
             const action = await transaction.fleetAction.findUnique({
                 where: { id: req.params.id as string },
-                select: { id: true, rickshawId: true, type: true, status: true },
+                select: {
+                    id: true,
+                    rickshawId: true,
+                    type: true,
+                    status: true,
+                    rickshaw: { select: { ownerId: true } },
+                },
             });
             if (!action) return { status: 404 as const, message: "Fleet action not found" };
+            if (auth.role === "ADMIN" && !auth.allOwnersAccess && !auth.ownerIds?.includes(action.rickshaw.ownerId)) {
+                return { status: 404 as const, message: "Fleet action not found" };
+            }
             if (action.status !== "OPEN") {
                 return { status: 409 as const, message: "Fleet action has already been reviewed" };
             }

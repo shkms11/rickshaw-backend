@@ -6,6 +6,9 @@ const prisma = new PrismaClient();
 
 async function main() {
     console.log("🌱 Seeding database...");
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("The demo seed is disabled in production.");
+    }
 
     // DEMO ONLY: this seed resets application records before rebuilding the demo dataset.
 
@@ -29,6 +32,11 @@ async function main() {
         );
     }
 
+    const seedPassword = process.env.DEMO_ACCOUNT_PASSWORD ?? "1234";
+    if (seedPassword.length < 4) {
+        throw new Error("DEMO_ACCOUNT_PASSWORD must be at least 4 characters.");
+    }
+
     await prisma.complaint.deleteMany();
     await prisma.payment.deleteMany();
     await prisma.trip.deleteMany();
@@ -38,13 +46,24 @@ async function main() {
     await prisma.owner.deleteMany();
     await prisma.user.deleteMany();
 
-    const password = await bcrypt.hash("Password123!", 10);
+    const password = await bcrypt.hash(seedPassword, 10);
 
     // =========================
     // USERS
     // =========================
 
-    await prisma.user.create({
+    const demoSuperAdmin = await prisma.user.create({
+        data: {
+            name: "Platform Super Admin (Demo)",
+            email: "superadmin@rickshaw.com",
+            phone: "+8801700000000",
+            password,
+            role: "SUPER_ADMIN",
+            approvalStatus: "APPROVED",
+        },
+    });
+
+    const demoAdmin = await prisma.user.create({
         data: {
             name: "System Admin",
             email: "admin@rickshaw.com",
@@ -149,6 +168,14 @@ async function main() {
         },
     });
 
+    await prisma.adminAssignment.createMany({
+        data: [ownerProfile1.id, ownerProfile2.id].map((ownerId) => ({
+            adminId: demoAdmin.id,
+            ownerId,
+            createdById: demoSuperAdmin.id,
+        })),
+    });
+
     await prisma.ownerSubscription.createMany({
         data: [ownerProfile1.id, ownerProfile2.id].map((ownerId) => ({
             ownerId,
@@ -242,6 +269,22 @@ async function main() {
                 longitude: 90.3795,
                 source: "DEMO",
             },
+        ],
+    });
+
+    await prisma.driverActivityEntry.createMany({
+        data: [
+            { driverId: driver1.id, workDate: new Date(), fare: 250, distanceKm: 4.2 },
+            { driverId: driver1.id, workDate: new Date(Date.now() - 24 * 60 * 60 * 1000), fare: 320, distanceKm: 6.1 },
+            { driverId: driver2.id, workDate: new Date(), fare: 180, distanceKm: 3.5 },
+        ],
+    });
+
+    await prisma.ownerRentalIncomeEntry.createMany({
+        data: [
+            { ownerId: ownerProfile1.id, rickshawId: rickshaw1.id, workDate: new Date(), amount: 500 },
+            { ownerId: ownerProfile1.id, rickshawId: rickshaw2.id, workDate: new Date(), amount: 450 },
+            { ownerId: ownerProfile2.id, rickshawId: rickshaw3.id, workDate: new Date(), amount: 400 },
         ],
     });
 
@@ -372,6 +415,7 @@ async function main() {
 
     console.log("Demo accounts");
     console.log("------------------------------");
+    console.log("Super admin: superadmin@rickshaw.com / +8801700000000");
     console.log("Admin:  admin@rickshaw.com / +8801700000001");
     console.log("Owner:  rahman@rickshaw.com / +8801800000002");
     console.log("Owner:  dhaka@rickshaw.com / +8801900000003");
@@ -379,11 +423,11 @@ async function main() {
     console.log("Driver: karim@rickshaw.com / +8801500000005");
     console.log("Driver: sakib@rickshaw.com / +8801300000006");
     console.log("------------------------------");
-    console.log("Password: Password123!");
+    console.log(`Password for all demo accounts: ${seedPassword}`);
     console.log("");
 
     console.log("Data created:");
-    console.log("• 8 users");
+    console.log("• 9 users");
     console.log("• 2 owners");
     console.log("• 3 drivers");
     console.log("• 4 rickshaws");
@@ -391,6 +435,7 @@ async function main() {
     console.log("• 4 trips");
     console.log("• 3 payments");
     console.log("• 3 complaints");
+    console.log("• 3 driver activity entries and 3 owner rental-income entries");
 }
 
 main()

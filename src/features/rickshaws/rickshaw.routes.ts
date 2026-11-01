@@ -1,6 +1,6 @@
 /** Connect vehicle listing/management routes and enforce owner/admin permissions. */
 import { Router } from "express";
-import { authenticate, requireRole } from "../../middleware/auth.middleware.js";
+import { authenticate, requireRole, requireScopedAdmin } from "../../middleware/auth.middleware.js";
 import {
     assignRickshawDriver,
     createRickshaw,
@@ -15,5 +15,5 @@ router.get("/", requireRole("ADMIN", "SUPER_ADMIN", "OWNER"), listRickshaws);
 router.get("/drivers", requireRole("OWNER"), listOwnerDrivers);
 router.post("/", requireRole("OWNER"), createRickshaw);
 router.patch("/:id/driver", requireRole("OWNER"), assignRickshawDriver);
-router.patch("/:id/status", requireRole("ADMIN", "SUPER_ADMIN"), updateRickshawStatus);
+router.patch("/:id/status", requireRole("ADMIN", "SUPER_ADMIN"), requireScopedAdmin, updateRickshawStatus);
 export default router;

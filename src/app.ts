@@ -10,6 +10,10 @@ import complaintRoutes from "./features/complaints/complaint.routes.js";
 import fleetActionRoutes from "./features/rickshaws/fleetActions.routes.js";
 import subscriptionRoutes from "./features/subscriptions/subscription.routes.js";
 import aiRoutes from "./features/ai/ai.routes.js";
+import profileRoutes from "./features/profile/profile.routes.js";
+import announcementRoutes from "./features/announcements/announcement.routes.js";
+import noticeBoardRoutes from "./features/admin/noticeBoard.routes.js";
+import ownerIncomeRoutes from "./features/owners/ownerIncome.routes.js";
 
 const app = express();
 
@@ -43,6 +47,10 @@ app.get("/", (_req, res) => {
 
 // Route modules own endpoint-specific middleware and controller wiring.
 app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/announcements", announcementRoutes);
+app.use("/api/notice-board", noticeBoardRoutes);
+app.use("/api/owners", ownerIncomeRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/rickshaws", rickshawRoutes);
 app.use("/api/admin", adminRouter);

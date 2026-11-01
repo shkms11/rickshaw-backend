@@ -1,6 +1,6 @@
 /** Route authenticated submissions to the complaint queue and gate review to admins. */
 import { Router } from "express";
-import { authenticate, requireRole } from "../../middleware/auth.middleware.js";
+import { authenticate, requireRole, requireScopedAdmin } from "../../middleware/auth.middleware.js";
 import {
     createComplaint,
     listAdminComplaints,
@@ -11,7 +11,7 @@ const router = Router();
 
 router.post("/", authenticate, createComplaint);
 router.get("/", authenticate, requireRole("ADMIN", "SUPER_ADMIN"), listAdminComplaints);
-router.patch("/:id/status", authenticate, requireRole("ADMIN", "SUPER_ADMIN"), updateComplaintStatus);
+router.patch("/:id/status", authenticate, requireRole("ADMIN", "SUPER_ADMIN"), requireScopedAdmin, updateComplaintStatus);
 
 /** Router mounted at `/api/complaints`. */
 export default router;

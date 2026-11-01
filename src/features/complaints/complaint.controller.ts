@@ -4,7 +4,7 @@ import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
 
 const prisma = new PrismaClient();
-type AuthRequest = Request & { auth?: { userId: string; role: string } };
+type AuthRequest = Request & { auth?: { userId: string; role: string; ownerIds?: string[] } };
 
 const complaintSchema = z.object({
     subject: z.string().trim().min(3).max(120),
@@ -43,9 +43,13 @@ export async function createComplaint(req: Request, res: Response) {
 }
 
 /** Return a bounded, newest-first admin queue with reporter details. */
-export async function listAdminComplaints(_req: Request, res: Response) {
+export async function listAdminComplaints(req: Request, res: Response) {
+    const auth = (req as AuthRequest).auth;
     try {
         const complaints = await prisma.complaint.findMany({
+            where: auth?.role === "ADMIN" && auth.ownerIds?.length
+                ? { trip: { is: { rickshaw: { is: { ownerId: { in: auth.ownerIds } } } } } }
+                : {},
             select: {
                 id: true,
                 subject: true,
@@ -66,6 +70,7 @@ export async function listAdminComplaints(_req: Request, res: Response) {
 
 /** Change an existing complaint between OPEN and RESOLVED. */
 export async function updateComplaintStatus(req: Request, res: Response) {
+    const auth = (req as AuthRequest).auth;
     const parsed = complaintStatusSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ message: "Choose OPEN or RESOLVED" });
@@ -73,7 +78,20 @@ export async function updateComplaintStatus(req: Request, res: Response) {
 
     try {
         const result = await prisma.complaint.updateMany({
-            where: { id: req.params.id as string },
+            where: {
+                id: req.params.id as string,
+                ...(auth?.role === "ADMIN" && auth.ownerIds?.length
+                    ? {
+                        trip: {
+                            is: {
+                                rickshaw: {
+                                    is: { ownerId: { in: auth.ownerIds } },
+                                },
+                            },
+                        },
+                    }
+                    : {}),
+            },
             data: { status: parsed.data.status },
         });
         if (result.count === 0) return res.status(404).json({ message: "Report not found" });

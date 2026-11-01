@@ -89,30 +89,62 @@ assigned-driver locations, and recorded trip-area usage are read from existing
 database models on the backend. No AI-specific database tables or migration are
 needed. Without a provider key, built-in answers and data summaries still work.
 
-To enable conversational Groq answers, configure `GROQ_API_KEY` and optionally
-`GROQ_MODEL` in the backend environment, then restart/redeploy the backend.
-Keep the key on the backend; the frontend never receives it. Only the user's
-authorized, relevant data context is sent to Groq.
+To enable conversational Groq answers, configure `GROQ_API_KEY` in the backend
+environment. `GROQ_MODEL` is optional and defaults to
+`openai/gpt-oss-120b`. Restart/redeploy the backend after changing environment
+settings. Keep the key on the backend; the frontend never receives it. Only the
+user's authorized, relevant data context is sent to Groq.
 
 ## Authentication and admin endpoints
 
-- `POST /api/auth/register` accepts `{ "name", "email", "password", "role", "licenseNo" }`. Role may be `DRIVER` or `OWNER` and defaults to `DRIVER`. Driver registrations require a unique license number. The owner or driver profile is created with the account, and new accounts require approval.
+- `POST /api/auth/register` accepts a name, phone, password, optional email, and a `DRIVER` or `OWNER` role. Driver license numbers are optional at registration and can be added later. New accounts require approval.
 - `POST /api/auth/login` returns a JWT only for approved accounts. Pending accounts receive `403` with code `ACCOUNT_PENDING_APPROVAL`; rejected accounts receive `403` with code `ACCOUNT_REJECTED`.
+- `GET /api/profile` and `PATCH /api/profile` let any signed-in role update their own Bangladesh identity/address details and profile picture URL. NID is encrypted at rest with `NID_ENCRYPTION_KEY`, returned only to its owner, and excluded from admin searches. Set a private 64-hex-character key before enabling NID storage.
+
+Generate `NID_ENCRYPTION_KEY` with
+`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+and keep the same key across deployments; losing it makes saved NIDs unreadable.
 - Admin routes require `Authorization: Bearer <token>` and the `ADMIN` or `SUPER_ADMIN` role.
 - `GET /api/admin/dashboard-summary` returns live counts for rickshaws, online drivers, active trips, and open complaints.
-- Drivers can share GPS from the dashboard; the owner sees locations for their assigned fleet and admins can see all recently reporting drivers. Location sharing requires browser permission and an open dashboard; coordinates older than two minutes are not shown as live.
-- `GET /api/admin/approvals` returns pending driver and owner accounts.
+- Drivers can share GPS from the dashboard; owners and scoped admins see locations for their own fleet, while super admins can see all reporting drivers. Location sharing requires browser permission and an open dashboard; coordinates older than two minutes are not shown as live.
+- `GET /api/admin/approvals` returns pending driver and owner accounts to super admins.
 - `PATCH /api/admin/approvals/:userId` accepts `{ "status": "APPROVED" }` or `{ "status": "REJECTED" }`.
 
-Admin accounts cannot be selected during public registration. Grant admin access
-only through a trusted administrative process.
+`SUPER_ADMIN` has platform-wide access. Each `ADMIN` must have a server-side
+assignment to one owner; admin requests are filtered to that owner's fleet. Only
+a super admin can issue an admin account using `POST /api/admin/administrators`.
+Fleet/list endpoints cap each response at 100 records; admin search responses
+are capped at 50. Rickshaw numbers are assigned from the owner's registered
+phone and an atomic per-owner sequence.
+
+Provision or reset the platform super admin after applying migrations. In
+non-production environments, the bootstrap command defaults to password
+`1234`; it will not promote an existing non-super-admin account:
+
+```powershell
+npm run bootstrap:super-admin
+```
+
+It creates or resets `superadmin@rickshaw.com` without clearing any other
+database records. In production, set `SUPER_ADMIN_PASSWORD` to a password with
+at least 12 characters before running the command. Demo registration and admin
+creation accept four-character passwords outside production; production keeps
+the longer requirements. Never put passwords in frontend settings.
 
 ## Demo data
 
-Run `npm run seed` (or `npm run db:seed`) to create the demo dataset on an empty
-database. The seed resets existing application records before rebuilding that
-dataset, so it refuses to run on a non-empty database unless explicitly
-confirmed. For a database that you intend to reset, use:
+Apply migrations, then run `npm run seed` (or `npm run db:seed`) to create the
+demo dataset on an empty non-production database. The seed resets existing
+application records before rebuilding that dataset, so it refuses to run on a
+non-empty database unless explicitly confirmed. All seeded demo accounts use
+password `1234` by default:
+
+```powershell
+npm run db:migrate
+npm run seed
+```
+
+For a database that you intend to reset, also use:
 
 ```powershell
 $env:ALLOW_DESTRUCTIVE_SEED = "true"
@@ -120,6 +152,10 @@ npm run seed
 Remove-Item Env:ALLOW_DESTRUCTIVE_SEED
 ```
 
-Only seed a disposable database. Do not use the demo seed against production
-data. It creates `admin@rickshaw.com` and other demo accounts with password
-`Password123!`; change these credentials and the JWT secret before deployment.
+Only seed a disposable database. The seed is disabled when `NODE_ENV` is
+`production`; never use its shared demo password on a deployed or production
+database. It creates `superadmin@rickshaw.com`, an admin assigned to both demo
+owners, two owners, and three drivers. All demo accounts share the selected
+demo password. Driver activity, rental-income totals, and fictional map
+locations are included for presentations. Admins created through the dashboard
+still require a 12-character password.

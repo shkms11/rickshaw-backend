@@ -16,6 +16,20 @@ enum Role {
   DRIVER
 }
 
+enum AnnouncementAudience {
+  SUPER_ADMIN
+  ADMIN
+  OWNER
+  DRIVER
+}
+
+enum AiActionType {
+  ANNOUNCEMENT_CREATE
+  ANNOUNCEMENT_UPDATE
+  RICKSHAW_STATUS
+  DRIVER_STATUS
+}
+
 enum ApprovalStatus {
   PENDING
   APPROVED
@@ -85,15 +99,24 @@ model User {
   password  String
   role      Role     @default(DRIVER)
   approvalStatus ApprovalStatus @default(PENDING)
+  isRestricted Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   driver Driver?
   owner  Owner?
+  profile UserProfile?
+  adminAssignments AdminAssignment[] @relation("AdminAccount")
+  issuedAdminAssignments AdminAssignment[] @relation("AdminIssuer")
+  authoredAnnouncements Announcement[] @relation("AnnouncementAuthor")
+  targetedAnnouncements Announcement[] @relation("AnnouncementRecipient")
+  aiActions AiActionLog[]
+  updatedAdminNoticeBoards AdminNoticeBoard[] @relation("AdminNoticeBoardUpdater")
 
   // Named relations distinguish this user's passenger trips from trips they drive.
   passengerTrips Trip[] @relation("PassengerTrips")
   driverTrips    Trip[] @relation("DriverTrips")
+  driverActivityEntries DriverActivityEntry[]
 
   payments   Payment[]
   complaints Complaint[]
@@ -108,7 +131,7 @@ model User {
 model Driver {
   id        String       @id @default(cuid())
   userId    String       @unique
-  licenseNo String       @unique
+  licenseNo String?      @unique
   status    DriverStatus @default(OFFLINE)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -125,16 +148,104 @@ model Driver {
 model Owner {
   id     String @id @default(cuid())
   userId String @unique
+  rickshawSequence Int @default(0)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   rickshaws Rickshaw[]
+  rentalIncomeEntries OwnerRentalIncomeEntry[]
   subscription OwnerSubscription?
   subscriptionPayments OwnerSubscriptionPayment[]
+  adminAssignments AdminAssignment[]
+  announcements Announcement[]
 
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  nid         String?
+  nidIv       String?
+  nidAuthTag  String?
+  photoUrl    String?
+  dateOfBirth DateTime?
+  division    String?
+  district    String?
+  upazila     String?
+  unionWard   String?
+  villageRoad String?
+  postalCode  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([division, district, upazila])
+}
+
+model AdminAssignment {
+  id          String   @id @default(cuid())
+  adminId     String
+  ownerId     String?
+  createdById String?
+  isObserver  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  admin     User  @relation("AdminAccount", fields: [adminId], references: [id], onDelete: Cascade)
+  owner     Owner? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("AdminIssuer", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([adminId, ownerId])
+  @@index([adminId])
+  @@index([ownerId])
+}
+
+model Announcement {
+  id              String               @id @default(cuid())
+  title           String               @db.VarChar(120)
+  message         String               @db.VarChar(2000)
+  audience        AnnouncementAudience
+  targetUserId    String?
+  ownerId         String?
+  createdById     String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  targetUser User?  @relation("AnnouncementRecipient", fields: [targetUserId], references: [id], onDelete: Cascade)
+  owner      Owner? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdBy  User   @relation("AnnouncementAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([audience, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([ownerId, audience, createdAt])
+}
+
+model AdminNoticeBoard {
+  id          String   @id @default("admin")
+  items       Json     @default("[]")
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  updatedBy User? @relation("AdminNoticeBoardUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+model AiActionLog {
+  id         String       @id @default(cuid())
+  proposalId String       @unique
+  userId     String
+  type       AiActionType
+  targetId   String
+  beforeData Json?
+  afterData  Json
+  createdAt  DateTime     @default(now())
+  undoneAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model OwnerSubscription {
@@ -198,6 +309,7 @@ model Rickshaw {
   driver   Driver? @relation(fields: [driverId], references: [id])
 
   trips Trip[]
+  rentalIncomeEntries OwnerRentalIncomeEntry[]
   fleetActions FleetAction[]
 
   createdAt DateTime @default(now())
@@ -258,6 +370,34 @@ model Trip {
   @@index([pickupLocation])
   @@index([dropoffLocation])
   @@index([createdAt])
+}
+
+model DriverActivityEntry {
+  id         String   @id @default(cuid())
+  driverId   String
+  workDate   DateTime @db.Date
+  fare       Decimal  @db.Decimal(10, 2)
+  distanceKm Float
+  createdAt  DateTime @default(now())
+
+  driver User @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, workDate])
+}
+
+model OwnerRentalIncomeEntry {
+  id        String   @id @default(cuid())
+  ownerId   String
+  rickshawId String
+  workDate  DateTime @db.Date
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  owner    Owner   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rickshaw Rickshaw @relation(fields: [rickshawId], references: [id], onDelete: Cascade)
+
+  @@unique([rickshawId, workDate])
+  @@index([ownerId, workDate])
 }
 
 model Payment {

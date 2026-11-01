@@ -4,7 +4,7 @@ import { PrismaClient } from "../../generated/prisma/client.js";
 import { z } from "zod";
 
 const prisma = new PrismaClient();
-type AuthRequest = Request & { auth?: { userId: string; role: string } };
+type AuthRequest = Request & { auth?: { userId: string; role: string; ownerIds?: string[] } };
 
 const locationSchema = z.object({
     latitude: z.number().min(-90).max(90),
@@ -66,8 +66,16 @@ export async function listDriverLocations(req: Request, res: Response) {
         const locations = await prisma.driverLocation.findMany({
             where: {
                 ...(auth.role === "OWNER"
-                    ? { driver: { rickshaw: { owner: { userId: auth.userId } } } }
-                    : {}),
+                    ? {
+                        driver: {
+                            rickshaw: {
+                                is: { owner: { is: { userId: auth.userId } } },
+                            },
+                        },
+                    }
+                    : auth.role === "ADMIN" && auth.ownerIds?.length
+                        ? { driver: { rickshaw: { is: { ownerId: { in: auth.ownerIds } } } } }
+                        : {}),
             },
             select: {
                 driverId: true,
@@ -78,7 +86,7 @@ export async function listDriverLocations(req: Request, res: Response) {
                 updatedAt: true,
                 driver: {
                     select: {
-                        user: { select: { name: true } },
+                        user: { select: { name: true, phone: true } },
                         rickshaw: {
                             select: {
                                 plateNo: true,
@@ -89,12 +97,14 @@ export async function listDriverLocations(req: Request, res: Response) {
                 },
             },
             orderBy: { updatedAt: "desc" },
+            take: 100,
         });
         return res.json({
             locations: locations.map((location) => ({
                 ...location,
                 driverId: location.driverId,
                 driverName: location.driver.user.name,
+                driverPhone: location.driver.user.phone,
                 rickshawPlate: location.driver.rickshaw?.plateNo ?? null,
                 ownerName: location.driver.rickshaw?.owner.user.name ?? null,
                 isLive: location.source === "LIVE" &&
