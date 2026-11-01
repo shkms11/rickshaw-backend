@@ -1,6 +1,6 @@
 /** Classify assistant questions, query only role-visible data, and format replies. */
 import { PrismaClient, type Prisma } from "../../generated/prisma/client.js";
-import Groq from "groq-sdk";
+import { Groq } from "groq-sdk";
 import { z } from "zod";
 import {
     getBangladeshAreaName,
