@@ -101,10 +101,12 @@ export async function listAdminFleetDrivers(req: Request, res: Response) {
                     status: true,
                     user: {
                         select: {
+                            id: true,
                             name: true,
                             phone: true,
                             email: true,
                             approvalStatus: true,
+                            isRestricted: true,
                         },
                     },
                     rickshaw: { select: { plateNo: true } },
