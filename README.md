@@ -41,13 +41,16 @@ exact frontend origins to override these defaults (for example, in Vercel's
 backend project environment variables). Do not include URL paths or a trailing
 slash. Redeploy the backend after changing the variable.
 
-For the Vercel backend project, configure `DATABASE_URL` with Neon's pooled
-connection string and `DIRECT_URL` with its direct (unpooled) connection string.
-The direct URL is used for database migrations; the pooled URL is used by the
-running API and seed process.
+For the Vercel backend project, set the Root Directory to `rickshaw-backend`
+so Vercel detects the Express app in this folder. Leave the build and output
+directory settings at their defaults so requests are routed through Express.
+Configure `DATABASE_URL` with Neon's pooled connection string and `DIRECT_URL`
+with its direct (unpooled) connection string. The direct URL is used for
+database migrations; the pooled URL is used by the running API and seed process.
 
-Set the frontend's `VITE_API_URL` to the backend URL ending in `/api` in Vercel.
-Vite embeds this value at build time, so redeploy the frontend after changing it.
+The frontend uses `/api` and its Vercel rewrite forwards requests to the stable
+backend project domain. If that domain changes, update
+`rickshaw-frontend/vercel.json` and redeploy the frontend.
 If Vercel Deployment Protection is enabled for the backend deployment, allow
 public access to the API deployment; an SSO redirect cannot be used by browser
 API requests and may appear as a CORS error.
